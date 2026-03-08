@@ -1,0 +1,15 @@
+datasets:
+  flower_photos:
+    url: https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
+    archive_type: tgz
+    checksum: ""
+    license: "TensorFlow example images (sample), derived from Flickr CC content"
+    expected_classes: [daisy, dandelion, roses, sunflowers, tulips]
+    description: "Small 5-class flower photo set often used in TF demos"
+  hymenoptera:
+    url: https://download.pytorch.org/tutorial/hymenoptera_data.zip
+    archive_type: zip
+    checksum: ""
+    license: "BSD-3-Clause (PyTorch tutorials sample)"
+    expected_classes: [ants, bees]
+    description: "Ant vs bee sample dataset from the PyTorch transfer learning tutorial"

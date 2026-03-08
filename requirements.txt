@@ -1,5 +1,5 @@
-fastapi==0.110.0
-uvicorn[standard]==0.27.1
+fastapi==0.103.2
+uvicorn[standard]==0.23.2
 torch==2.2.1
 torchvision==0.17.1
 Pillow==10.2.0
@@ -8,4 +8,11 @@ opencv-python-headless==4.9.0.80
 python-multipart==0.0.9
 ultralytics==8.1.25
 tqdm==4.66.2
-anyio==4.3.0
+anyio==3.7.1
+requests==2.31.0
+PyYAML==6.0.1
+pandas==2.2.1
+scikit-learn==1.4.1.post1
+great_expectations==0.18.13
+prefect==2.14.21
+griffe==0.40.0

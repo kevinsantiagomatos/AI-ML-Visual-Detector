@@ -69,3 +69,22 @@ docker run -p 8000:8000 -v $(pwd)/models:/app/models vision-demo
 ## Notes
 - If no custom classifier weights are present, the API falls back to ImageNet ResNet50 and returns top-3 ImageNet labels.
 - Detection endpoint returns 503 unless YOLO weights are provided or the fallback model loads.
+
+## Data pipeline (ingest → prepare → profile)
+```bash
+# 1) Ingest sample public datasets (flower_photos + hymenoptera)
+python -m src.data.ingest --config data/sources/sources.yaml
+
+# 2) Create stratified train/val/test splits as symlinks + metadata
+python -m src.data.prepare --dataset flower_photos
+
+# 3) Run Great Expectations checks and drift report
+python -m src.data.quality --dataset flower_photos --reference data/processed/flower_photos/reference_stats.json
+
+# 4) Orchestrate all of the above with Prefect
+prefect deployment run data_pipeline --params '{"datasets": ["flower_photos"]}'
+```
+Outputs:
+- `data/raw/<dataset>/manifest.csv` – extracted files + hashes
+- `data/processed/<dataset>/train|val|test/...` – symlinked splits + `metadata.json`
+- `reports/ge/<dataset>/index.html` – Great Expectations validation + `drift.json`
