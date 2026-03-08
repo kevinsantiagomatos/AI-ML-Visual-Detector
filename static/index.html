@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vision Demo</title>
+  <style>
+    :root { font-family: "Inter", system-ui, -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; }
+    body { margin: 0; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+    header { display: flex; align-items: baseline; gap: 12px; }
+    main { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+    section { background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+    button { background: linear-gradient(120deg, #22d3ee, #3b82f6); border: none; color: white; padding: 10px 14px; border-radius: 10px; cursor: pointer; font-weight: 600; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    input[type=file] { color: #94a3b8; }
+    ul { padding-left: 18px; }
+    canvas, img { max-width: 100%; border-radius: 10px; border: 1px solid #1f2937; }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .tag { background:#1f2937; border-radius: 999px; padding: 6px 10px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AI Vision Demo</h1>
+    <p class="tag">Classifier + Detector</p>
+  </header>
+
+  <section>
+    <div class="row">
+      <input id="file" type="file" accept="image/*" />
+      <button id="predictBtn">Predict</button>
+      <button id="detectBtn">Detect</button>
+      <label class="tag">Optional: use camera below</label>
+    </div>
+  </section>
+
+  <main>
+    <section>
+      <h3>Preview</h3>
+      <img id="preview" alt="preview" />
+    </section>
+
+    <section>
+      <h3>Predictions</h3>
+      <ul id="predList"></ul>
+    </section>
+
+    <section>
+      <h3>Detections</h3>
+      <canvas id="canvas"></canvas>
+      <div id="detInfo"></div>
+    </section>
+  </main>
+
+<script>
+  const fileInput = document.getElementById('file');
+  const preview = document.getElementById('preview');
+  const predList = document.getElementById('predList');
+  const canvas = document.getElementById('canvas');
+  const detInfo = document.getElementById('detInfo');
+
+  function showPreview(file) {
+    const reader = new FileReader();
+    reader.onload = e => { preview.src = e.target.result; };
+    reader.readAsDataURL(file);
+  }
+
+  function fileOrAlert() {
+    const file = fileInput.files[0];
+    if (!file) { alert('Choose an image first'); return null; }
+    return file;
+  }
+
+  async function postImage(url) {
+    const file = fileOrAlert();
+    if (!file) return;
+    const form = new FormData();
+    form.append('file', file);
+    const res = await fetch(url, { method: 'POST', body: form });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err);
+    }
+    return res.json();
+  }
+
+  document.getElementById('predictBtn').onclick = async () => {
+    const file = fileOrAlert();
+    if (!file) return;
+    showPreview(file);
+    predList.innerHTML = 'Loading...';
+    try {
+      const data = await postImage('/predict');
+      predList.innerHTML = '';
+      data.forEach(p => {
+        const li = document.createElement('li');
+        li.textContent = `${p.label} — ${(p.score * 100).toFixed(1)}%`;
+        predList.appendChild(li);
+      });
+    } catch (e) {
+      predList.innerHTML = e.message;
+    }
+  };
+
+  document.getElementById('detectBtn').onclick = async () => {
+    const file = fileOrAlert();
+    if (!file) return;
+    showPreview(file);
+    detInfo.textContent = 'Running detection...';
+    try {
+      const data = await postImage('/detect');
+      detInfo.textContent = '';
+      drawDetections(file, data.objects || []);
+    } catch (e) {
+      detInfo.textContent = e.message;
+    }
+  };
+
+  function drawDetections(file, objects) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        canvas.width = img.width; canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        objects.forEach(obj => {
+          const [x1, y1, x2, y2] = obj.bbox;
+          const w = x2 - x1, h = y2 - y1;
+          ctx.strokeStyle = '#22d3ee';
+          ctx.lineWidth = 3;
+          ctx.strokeRect(x1, y1, w, h);
+          const label = `${obj.label} ${(obj.score * 100).toFixed(1)}%`;
+          ctx.fillStyle = 'rgba(34,211,238,0.8)';
+          ctx.fillRect(x1, y1 - 24, ctx.measureText(label).width + 10, 22);
+          ctx.fillStyle = '#0f172a';
+          ctx.fillText(label, x1 + 4, y1 - 8);
+        });
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+</script>
+</body>
+</html>
