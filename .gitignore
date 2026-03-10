@@ -7,6 +7,10 @@ runs/
 .venv/
 .env
 .DS_Store
+.pytest_cache/
+.ipynb_checkpoints/
+get-pip.py
+tempCodeRunnerFile.py
 data/raw/
 data/processed/
 reports/
